@@ -13,6 +13,6 @@
 
 d=`date +%Y%m%d`
 
-while read -r line;
-do esearch -db protein -query ${line} | efetch -format fasta >> archaeal_histones_${d}.fa
-done < arc_histone_hits_20191211.txt
+while read line;
+do efetch -db protein -id $line -format fasta;
+done < arc_histones_hits_20191211.txt >> archaeal_histones_${d}.fa
