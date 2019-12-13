@@ -48,16 +48,16 @@ build hmm-profile using build_hmm_profile.sh
 ## Continuing development
 To make this analysis better:
 0. Use a workflow management tool like snakemake to streamline analysis.
-0. Do analysis on DBSCAN parameters to find optimal conditions.
-0. Half Blast:
+1. Do analysis on DBSCAN parameters to find optimal conditions.
+2. Half Blast:
     1. Make run in parallel.
     2. Run Blast locally.
     3. Optimize thresholding.
-0. Evaluting histone clusters:
+3. Evaluting histone clusters:
     1. Find average or median protein from each cluster.
     2. See what are the characteristic of each group.
     3. Figure out which phyla are represented in each cluster.
-0. Implement more tests to ensure the scripts are robust.
+4. Implement more tests to ensure the scripts are robust.
     
 ## Summary
 Although this is a preliminary analysis, I think I have found some good leads on proteins to study. This DBSCAN suggests 7 clusters of histones, at least two of which are thought to be real histones. I've previously identified one of the other clusters. Cluster 5 is an interesting protein, as it looks like doublet histone connected to something else, interesting... This analysis could be used to explore the diversity of other archaeal proteins, mainly the protein Alba, which is thought to have a similar role to that of histones.
