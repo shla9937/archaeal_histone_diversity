@@ -46,7 +46,7 @@ build hmm-profile using build_hmm_profile.sh
 ![](conservation_null.png)
 
 ## Continuing development
-To make this analysis better:
+#### To make this analysis better:
 0. Use a workflow management tool like snakemake to streamline analysis.
 1. Do analysis on DBSCAN parameters to find optimal conditions.
 2. Half Blast:
