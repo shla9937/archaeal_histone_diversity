@@ -183,7 +183,7 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
 
     print("Percent of passing tests: "+str((passes/(passes+fails))*100)+"%")
     
-    if (passes/(passes+fails)) > 0.66:
+    if (passes/(passes+fails)) > 0.67:
         final_bounds = bounds
 
     fig = plot(sample_df)
