@@ -36,7 +36,7 @@ def main():
         proteins = assign_final_labels(imports, final_bounds)
         fig = plot(proteins)
         pyo.offline.plot(fig, filename=f'../outputs/dbscan_optimized_plot.html', auto_open=True)
-        write_df(proteins, '../proteins_clustered_db.csv')
+        write_df(proteins, '../outputs/proteins_clustered_db.csv')
     else:
         print("Bounds were not found, try a different sample size")
 

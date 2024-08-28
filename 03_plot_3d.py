@@ -33,7 +33,7 @@ def main():
     fig.show()
     plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
     write_clusters(proteins)
-    write_df(proteins, 'proteins_clustered_taxanomy_db.csv')
+    write_df(proteins, '../outputs/proteins_clustered_taxanomy_db.csv')
     
 def add_tax(proteins, tax_file):
     tax_dict = {}
