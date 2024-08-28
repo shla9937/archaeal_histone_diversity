@@ -6,23 +6,23 @@ import numpy as np
 import ast
 
 def main():
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='Process protein data and plot interactions.')
     parser.add_argument('--df', type=str, required=True, help='Path to the CSV file containing protein df')
     parser.add_argument('--meta', type=str, required=True, help='Path to TSV containing metadata')
     args = parser.parse_args()
     
-    # Load data
+    global clust_features
+    clust_features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+
     proteins = pd.read_csv(args.df)
     proteins.set_index('Protein Name', inplace=True)
     proteins['Cluster'] = proteins['Cluster'].astype(str)
     metadata = pd.read_csv(args.meta, sep='\t')
-
-    #process data
     locations = code_locations(metadata)
     output_locations(locations)
     proteins_by_species, nulls = merge_dfs(proteins, locations)
     proteins_by_species = add_strategy(proteins_by_species)
+    output_species(proteins_by_species, nulls)
     write_strategies(proteins_by_species, proteins)
 
 def code_locations(metadata):
@@ -179,28 +179,22 @@ def determine_pressures(locations):
     return pressures
     
 def output_locations(locations):
-    # Save the updated dataframe to a new CSV file
     output_file_path = '../outputs/location_by_species.csv'
     locations.to_csv(output_file_path, index=True)
     return True   
      
 def merge_dfs(proteins, locations):
-    # Create a DataFrame to hold the merged data
     locations['Number of histones'] = 0
     locations['Clusters'] = [[] for _ in range(len(locations))]
     locations['Histones'] = [[] for _ in range(len(locations))]
-
     columns_order = ['Number of histones', 'Clusters', 'Histones'] + \
                     [col for col in locations.columns if col not in ['Number of histones', 'Clusters', 'Histones']]
     locations = locations[columns_order]
-
     nulls_by_species = pd.DataFrame(columns=['Number of proteins', 'Proteins', 'Species ID'])
-
     for index, row in proteins.iterrows():
         species = row['Species ID']
         cluster = row['Cluster']
-        protein = index  # Assuming index is the protein name or identifier
-
+        protein = index
         if cluster != '-1':
             if species in locations.index:
                 locations.at[species, 'Number of histones'] += 1
@@ -221,26 +215,17 @@ def merge_dfs(proteins, locations):
     return locations, nulls_by_species
 
 def add_strategy(proteins_by_species):
-
     proteins_by_species['Clusters'] = proteins_by_species['Clusters'].apply(
         lambda x: x if isinstance(x, list) else [])
-    
-    category_order = [
-        'Single 0', 'Single 1', 'Single 2', 'Single 3', 'Single 4',
-        'Multiple 1', 'Multiple 2', 'Multiple 3', 'Multiple 4',
-        'Combination 0 + 1', 'Combination 0 + 3', 
-        'Combination 1 + 2', 'Combination 1 + 3', 
-        'Combination 2 + 3', 'Combination 1 + 2 + 3',
-        'No histones']
-    
-    # Apply the function to the 'Clusters' column to generate the 'Strategy' column
     proteins_by_species['Strategy'] = proteins_by_species['Clusters'].apply(generate_strategy)
-    
-    # Convert 'Strategy' to a categorical type with the defined order
+    strategies = proteins_by_species['Strategy'].unique()
+    singles = sorted([s for s in strategies if s.startswith('Single')])
+    multiples = sorted([s for s in strategies if s.startswith('Multiple')])
+    combinations = sorted([s for s in strategies if s.startswith('Combination')])
+    no_histones = [s for s in strategies if s == 'No histones']
+    category_order = singles + multiples + combinations + no_histones
     proteins_by_species['Strategy'] = pd.Categorical(
         proteins_by_species['Strategy'], categories=category_order, ordered=True)
-    
-    # Reorder columns to place 'Strategy' to the left of 'Clusters'
     columns = list(proteins_by_species.columns)
     columns.insert(columns.index('Clusters'), columns.pop(columns.index('Strategy')))
     proteins_by_species = proteins_by_species[columns]
@@ -260,61 +245,45 @@ def generate_strategy(clusters):
 
 def output_species(proteins_by_species, nulls):
     nulls.to_csv('../outputs/null_species.csv', index=True)
-    proteins_by_species.to_csv('../outputs/proteins_by_species.csv', index=True)
+    proteins_by_species.to_csv('../outputs/proteins_clustered_taxonomy_strategy_db.csv', index=True)
     return True 
 
 def write_strategies(strategies_df, sequences_df):
-    features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
     closest_proteins = {}
     strategy_dict = {}
-
-    # Initialize dictionary keys for strategies and sub-strategies
+ 
     for _, row in strategies_df.iterrows():
         strategy = row['Strategy'].replace(" ", "_")
-
-        # Ensure clusters and histones are lists (which they already should be)
         clusters = row['Clusters']
         histones = row['Histones']
-
-        # Create a key for each combination of strategy and cluster
         for cluster in clusters:
             cluster_key = f"{strategy}_{cluster}"
             if cluster_key not in strategy_dict:
                 strategy_dict[cluster_key] = []
-
-    # Populate the dictionary with corresponding histones
     for _, row in strategies_df.iterrows():
         strategy = row['Strategy'].replace(" ", "_")
         clusters = row['Clusters']
         histones = row['Histones']
-
         for i, cluster in enumerate(clusters):
             cluster_key = f"{strategy}_{cluster}"
             strategy_dict[cluster_key].append(histones[i])
-
-    # Write out the fasta files
     for cluster_key, histone_list in strategy_dict.items():
         with open(f'../outputs/{cluster_key}.fa', 'w') as f:
             for protein_name in histone_list:
                 if protein_name in sequences_df.index:
                     sequence = sequences_df.loc[protein_name, 'Sequence']
                     f.write(f'{protein_name}\n{sequence}\n')
-
-    # Additionally, find and write the closest proteins to the center of mass
     with open('../outputs/closest_to_com.fa', 'w') as f_com:
         for strategy, histone_list in strategy_dict.items():
-            subset = sequences_df.loc[histone_list].dropna(subset=features)
+            subset = sequences_df.loc[histone_list].dropna(subset=clust_features)
             if not subset.empty:
-                com = subset[features].mean().values
-                distances = ((subset[features] - com) ** 2).sum(axis=1)
+                com = subset[clust_features].mean().values
+                distances = ((subset[clust_features] - com) ** 2).sum(axis=1)
                 closest_idx = distances.idxmin()
                 closest_sequence = sequences_df.loc[closest_idx, 'Sequence']
                 closest_proteins[strategy] = closest_sequence
                 f_com.write(f'{closest_idx}_{strategy}\n{closest_sequence}\n')
-
     return True
-
-
 
 if __name__ == '__main__':
     main()

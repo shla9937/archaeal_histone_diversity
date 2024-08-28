@@ -28,7 +28,7 @@ def main():
     global clust_features, plot_features, cud_palette
     clust_features = ['New Length', 'New pI', 'New Gravy', 'New Instability']
     plot_features = ['Length', 'pI', 'Gravy']
-    cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
+    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"] 
     
     e, min_samples, bounds = get_bounds(imports, args.sil, args.n)
     final_bounds = test_bounds(imports, args.n, e, min_samples, bounds)

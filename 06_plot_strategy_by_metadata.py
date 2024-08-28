@@ -8,44 +8,25 @@ from scipy.stats import ttest_ind, shapiro, mannwhitneyu
 import re
 
 def main():
-    # Set up argparse to take in the CSV file and cutoff number as arguments
     parser = argparse.ArgumentParser(description='Plot strategy distribution from a CSV file.')
     parser.add_argument('--df', type=str, required=True, help='Path to the input CSV file')
     parser.add_argument('--cutoff', type=int, required=True, help='Minimum number of genomes for a strategy to be included')
     args = parser.parse_args()
 
-    # Read the DataFrame from the CSV file
-    species_location = pd.read_csv(args.df)
+    global cud_palette
+    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"]    
 
-    # Exploding the 'Strategy' column
-    species_location_exploded = explode_list_column(species_location, 'Strategy')
-
-    # Filter strategies based on the specified cutoff
-    strategy_counts = species_location_exploded['Strategy'].value_counts()
+    proteins = pd.read_csv(args.df)
+    proteins_exploded = explode_list_column(proteins, 'Strategy')
+    strategy_counts = proteins_exploded['Strategy'].value_counts()
     valid_strategies = strategy_counts[strategy_counts > args.cutoff].index.tolist()
-    
-    # Filter the DataFrame to only include valid strategies
-    filtered_df = species_location_exploded[species_location_exploded['Strategy'].isin(valid_strategies)]
+    filtered_df = proteins_exploded[proteins_exploded['Strategy'].isin(valid_strategies)]
 
-    # Define the category order for strategies
-    category_order = [
-        'Single 0', 'Single 1', 'Single 2', 'Single 3', 'Single 4',
-        'Multiple 1', 'Multiple 2', 'Multiple 3', 'Multiple 4',
-        'Combination 0 + 1', 'Combination 0 + 3', 
-        'Combination 1 + 2', 'Combination 1 + 3', 
-        'Combination 2 + 3', 'Combination 1 + 2 + 3',
-        'No histones']
-
-    # Filter category order to only include valid strategies
+    category_order = get_categories(proteins)
     valid_category_order = [strategy for strategy in category_order if strategy in valid_strategies]
-    
-    # Convert 'Strategy' to a categorical type with the defined order
     filtered_df['Strategy'] = pd.Categorical(
         filtered_df['Strategy'], categories=valid_category_order, ordered=True)
-
-    # Columns to compare with
     columns_to_compare = ['Phylum', 'coding_density', 'gc_percentage', 'genome_size']
-    
     for col in columns_to_compare:
         if col == 'Phylum':
             plot_comparison(filtered_df, 'Strategy', col, None, save_path=f'../outputs/strategy_v_{col}.png', use_colors=False)
@@ -54,26 +35,33 @@ def main():
             p_values_df = perform_pairwise_comparison(filtered_df, col)
             plot_comparison(filtered_df, 'Strategy', col, p_values_df, save_path=f'../outputs/strategy_v_{col}.png', use_colors=True)
 
-# Function to explode the list column
 def explode_list_column(df, col):
     return df.explode(col)
+
+def get_categories(proteins):
+    strategies = proteins['Strategy'].unique()
+    singles = sorted([s for s in strategies if s.startswith('Single')])
+    multiples = sorted([s for s in strategies if s.startswith('Multiple')])
+    combinations = sorted([s for s in strategies if s.startswith('Combination')])
+    no_histones = [s for s in strategies if s == 'No histones']
+    category_order = singles + multiples + combinations + no_histones
+    return category_order
 
 # Function to plot different charts
 def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=True):
     plt.figure(figsize=(16, 8))  # Increase the figure size
 
     if use_colors:
-        # Define colors for the bars
-        hex_colors = ['#aec7e8', '#ffb343', '#98df8a', '#ff9896', '#c5b0d5', '#c49c8a', 
-                      '#fbb4e0', '#cccccc', '#dbdb8d', '#9edae5']
         colors = []
 
         for cluster in df[x_col].cat.categories:
             if '+' not in cluster:
                 match = re.search(r'\d+', cluster)
-                if match:
+                if 'Multiple' in cluster:
+                    colors.append(cud_palette[-2])
+                elif match:
                     index = int(match.group())
-                    colors.append(hex_colors[index + 1])
+                    colors.append(cud_palette[index])
                 else:
                     colors.append('#444444')
             else:

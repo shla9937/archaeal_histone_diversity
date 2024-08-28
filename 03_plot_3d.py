@@ -23,7 +23,7 @@ def main():
     global clust_features, plot_features, cud_palette
     clust_features = ['New Length', 'New pI', 'New Gravy', 'New Instability']
     plot_features = ['Length', 'pI', 'Gravy']
-    cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
+    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"] 
 
     fig = plot(proteins)
     fig = plot_network(fig, interaction_dict, pairs_dict, proteins, True)
@@ -32,7 +32,7 @@ def main():
     fig = add_dropdown(proteins, fig)
     plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
     write_clusters(proteins)
-    write_df(proteins, '../outputs/proteins_clustered_taxanomy_db.csv')
+    write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
     
 def add_tax(proteins, tax_file):
     tax_dict = {}

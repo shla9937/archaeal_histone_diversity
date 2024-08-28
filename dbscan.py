@@ -22,7 +22,7 @@ def main():
 
     global features, cud_palette
     features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
-    cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
+    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"] 
 
     proteins = cluster(float(args.sil), imports)
     fig = plot(proteins)
