@@ -43,9 +43,9 @@ def main():
 def optimize_parameters(X, sil_target):
     final_eps = 0
     final_min = 0
-    final_sil = 1
-    for eps in np.arange(0.1, 2.0, 0.1):
-        for min_samples in range(5, 100, 5):  
+    final_sil = 1 
+    for eps in np.arange(0.2, 0.6, 0.1):
+        for min_samples in range(20, 50, 10):  
             db = DBSCAN(eps=eps, min_samples=int(min_samples)).fit(X)
             unique_clusters = np.unique(db.labels_)
             num_clusters = len(unique_clusters)
