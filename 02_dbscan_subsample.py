@@ -25,8 +25,9 @@ def main():
     imports = pd.read_csv(args.df)
     imports.set_index('Protein Name', inplace=True)
     
-    global features, cud_palette
-    features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+    global clust_features, plot_features, cud_palette
+    clust_features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+    plot_features = ['Length', 'pI', 'Gravy']
     cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
     
     e, min_samples, bounds = get_bounds(imports, args.sil, args.n)
@@ -62,7 +63,7 @@ def optimize_parameters(X, sil_target):
     return final_eps, final_min
 
 def get_clusters(sample_df, X, e, min_samples):
-    db = DBSCAN(eps=e, min_samples=int(min_samples)).fit(sample_df[features])
+    db = DBSCAN(eps=e, min_samples=int(min_samples)).fit(sample_df[clust_features])
     sample_df['Cluster'] = db.labels_.astype(str)
     non_noise_df = sample_df[sample_df['Cluster'] != '-1']
     cluster_counts = non_noise_df['Cluster'].value_counts()
@@ -75,13 +76,13 @@ def get_clusters(sample_df, X, e, min_samples):
 
 def get_bounds(imports, sil_target, n_samples):
     bounds = {}
-    all_bounds = {}  # To store bounds from all runs for averaging
+    all_bounds = {}
     initial = True
     print(f"Finding e and min")
 
     for run in range(3):
         sample_df = imports.sample(n=n_samples)
-        X = sample_df[features].values
+        X = sample_df[clust_features].values
         
         if initial:
             e, min_samples = optimize_parameters(X, sil_target)
@@ -94,11 +95,11 @@ def get_bounds(imports, sil_target, n_samples):
         run_bounds = {}
         for cluster in sample_df['Cluster'].unique():
             if cluster == '-1':
-                continue  # Skip noise points
+                continue
             
             cluster_data = sample_df[sample_df['Cluster'] == cluster]
             cluster_bounds = {}
-            for feature in features:
+            for feature in clust_features:
                 cluster_bounds[feature] = {
                     'min': cluster_data[feature].min(),
                     'max': cluster_data[feature].max(),
@@ -107,29 +108,23 @@ def get_bounds(imports, sil_target, n_samples):
         
         if not bounds:
             bounds = run_bounds
-            # Initialize all_bounds with the first run's bounds
-            all_bounds = {cluster: {feature: {'min': [], 'max': []} for feature in features} for cluster in bounds}
+            all_bounds = {cluster: {feature: {'min': [], 'max': []} for feature in clust_features} for cluster in bounds}
         else:
-            # Compare clusters from this run to existing bounds
             run_clusters = set(run_bounds.keys())
             existing_clusters = set(bounds.keys())
             
             if run_clusters != existing_clusters:
                 sys.exit(f"Uneven number of clusters found: Run clusters = {run_clusters}, Existing clusters = {existing_clusters}.")
-            
-            # Update existing bounds with new information
+
             for run_cluster, run_cluster_bounds in run_bounds.items():
                 if run_cluster == '-1':
-                    continue  # Skip noise points
+                    continue
                 
                 matching_cluster = None
                 for existing_cluster, existing_bounds in bounds.items():
-                    # Calculate centroid of the run_cluster
-                    centroid = {feature: (run_cluster_bounds[feature]['min'] + run_cluster_bounds[feature]['max']) / 2.0 for feature in features}
-                    
-                    # Check if the centroid fits within the bounds of an existing cluster
+                    centroid = {feature: (run_cluster_bounds[feature]['min'] + run_cluster_bounds[feature]['max']) / 2.0 for feature in clust_features}
                     fits_all = True
-                    for feature in features:
+                    for feature in clust_features:
                         if not (existing_bounds[feature]['min'] <= centroid[feature] <= existing_bounds[feature]['max']):
                             fits_all = False
                             break
@@ -138,26 +133,23 @@ def get_bounds(imports, sil_target, n_samples):
                         break
                 
                 if matching_cluster is not None:
-                    # Store bounds for averaging
-                    for feature in features:
+                    for feature in clust_features:
                         feature_min = run_cluster_bounds[feature]['min']
                         feature_max = run_cluster_bounds[feature]['max']
                         all_bounds[matching_cluster][feature]['min'].append(feature_min)
                         all_bounds[matching_cluster][feature]['max'].append(feature_max)
                 else:
                     print(f"Cluster {run_cluster} does not match any existing cluster.")
-    
-    # Calculate final bounds by averaging the stored min and max values
+
     final_bounds = {}
     for cluster, features_bounds in all_bounds.items():
         final_bounds[cluster] = {}
         for feature, bounds_values in features_bounds.items():
-            if bounds_values['min']:  # Ensure there are values to average
+            if bounds_values['min']:
                 final_bounds[cluster][feature] = {
                     'min': sum(bounds_values['min']) / len(bounds_values['min']),
                     'max': sum(bounds_values['max']) / len(bounds_values['max'])}
             else:
-                # If no values were collected, handle appropriately
                 final_bounds[cluster][feature] = {
                     'min': None,
                     'max': None}
@@ -171,7 +163,7 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
     for i in range(3):
         print(f"Running test {i + 1}/20")
         sample_df = imports.sample(n=n_samples)
-        X = sample_df[features].values
+        X = sample_df[clust_features].values
         sample_df = get_clusters(sample_df, X, e, min_samples)
         test_df = sample_df.copy()
         test_df['Cluster'] = sample_df.apply(lambda row: classify_point(row, bounds), axis=1)
@@ -223,7 +215,7 @@ def classify_point(row, bounds):
     return '-1'
 
 def plot(proteins):
-    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', 
+    fig = px.scatter_3d(proteins, x=plot_features[0], y=plot_features[1], z=plot_features[2], color='Cluster', 
                         color_discrete_sequence=cud_palette, category_orders={'Cluster': proteins['Cluster'].unique()}, 
                         hover_name=proteins.index)
     fig.update_traces(marker=dict(size=3, opacity=0.6))

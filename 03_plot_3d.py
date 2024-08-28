@@ -9,31 +9,31 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 def main():
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='Process protein data and plot interactions.')
     parser.add_argument('--df', type=str, required=True, help='Path to the CSV file containing protein df')
     parser.add_argument('--tax', type=str, required=True, help='Path to the taxonomy file')
     args = parser.parse_args()
-    
-    # Load data
+
     proteins = pd.read_csv(args.df)
     proteins.set_index('Protein Name', inplace=True)
     proteins['Cluster'] = proteins['Cluster'].astype(str)
-    # Process data
     proteins = add_tax(proteins, args.tax)
     interaction_dict, pairs_dict = find_interactions(proteins)
     
-    # Plot network
-    color_palette()
+    global clust_features, plot_features, cud_palette
+    clust_features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+    plot_features = ['Length', 'pI', 'Gravy']
+    cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
+
     fig = plot(proteins)
     fig = plot_network(fig, interaction_dict, pairs_dict, proteins, True)
     fig, cluster_centers = add_centers(proteins, fig)
     fig, centroids = add_centroids(proteins, cluster_centers, fig)
     fig = add_dropdown(proteins, fig)
     fig.show()
-    plotly.offline.plot(fig, filename='../outputs/3d_interactive_plot.html', auto_open=True)
+    plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
     write_clusters(proteins)
-    write_df(proteins, args.df)
+    write_df(proteins, 'proteins_clustered_taxanomy_db.csv')
     
 def add_tax(proteins, tax_file):
     tax_dict = {}
@@ -46,21 +46,6 @@ def add_tax(proteins, tax_file):
         for idx, level in enumerate(['Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species']):
             proteins.at[protein, level] = tax_dict[species][idx].lstrip(f"{level[0].lower()}__")
     return proteins
-
-def color_palette():
-    global tab_20, tab_20_pastel
-    old_tab_20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 179, 71),  
-                  (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),  
-                  (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),  
-                  (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),  
-                  (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
-    tab_20_pastel, tab_20 = [], []
-    for idx, color in enumerate(old_tab_20):
-        if idx % 2 == 1:
-            tab_20_pastel.append('rgb'+str(color))
-        else:
-            tab_20.append('rgb'+str(color))
-    return True
 
 def unstandardize_data(data_list, coords):
     unstandard_list = []
@@ -75,38 +60,29 @@ def find_interactions(proteins):
     species = proteins['Species ID'].unique()
     interaction_dict = {}
     pairs_dict = {}
-
     protein_to_cluster = proteins['Cluster'].to_dict()
-
     for specium in species:
         interaction_dict[specium] = proteins[proteins['Species ID'] == specium].index.astype(str).tolist()
-    
     for specium in interaction_dict:
         prime_list = interaction_dict[specium]
-        query_list = prime_list.copy()  # Copy the list to avoid modification during iteration
+        query_list = prime_list.copy()
         pairs = []
-        
         for prime_protein in prime_list:
             for query_protein in query_list:
                 if prime_protein != query_protein:
                     pairs.append([prime_protein, query_protein])
             query_list.remove(prime_protein)
-        
         for pair in pairs:
-            # Use the protein IDs to look up cluster values from the mapping
             clust_list = [protein_to_cluster.get(pair[0], None), protein_to_cluster.get(pair[1], None)]
             clust_set = set(clust_list)
-            # Remove None values from clustering set
             clust_set.discard(None)
             clust_sort = sorted(clust_set)
             clust_tup = tuple(clust_sort)
-            
             if clust_tup:
                 if clust_tup in pairs_dict:
                     pairs_dict[clust_tup] += [pair]
                 else: 
                     pairs_dict[clust_tup] = [pair]
-
     return interaction_dict, pairs_dict
 
 def plot_network(fig, interaction_dict, pairs_dict, proteins, remove_null):
@@ -132,7 +108,7 @@ def plot_network(fig, interaction_dict, pairs_dict, proteins, remove_null):
         if len(interaction) == 1:
             cluster = str(interaction[0])
             trace_name = 'Cluster '+cluster+' interactions'
-            color = tab_20_pastel[int(cluster)+1]
+            color = cud_palette[int(cluster)+1]
             fig.add_scatter3d(x=line_xs, y=line_ys, z=line_zs, mode='lines', 
                   line=dict(color=color, width=0.2), name=trace_name)
         else:
@@ -232,7 +208,7 @@ def add_centers(proteins, fig):
     return fig, cluster_centers
 
 def plot(proteins):
-    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', color_discrete_sequence=tab_20_pastel, 
+    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', color_discrete_sequence=cud_palette, 
                         hover_name=proteins.index, hover_data=['Species','Genus','Family','Order','Class','Phylum'])
     fig.update_traces(marker=dict(size=3, opacity=0.6))
     fig.update_layout(title={'text': 'Protein clustering'}, legend= {'itemsizing': 'constant'})
@@ -268,8 +244,8 @@ def write_clusters(proteins):
     h.close()    
     return True
 
-def write_df(dataframe, old_file):
-    dataframe.to_csv(old_file, index_label='Protein Name')
+def write_df(dataframe, file_name):
+    dataframe.to_csv(file_name, index_label='Protein Name')
     return True
 
 if __name__ == '__main__':
