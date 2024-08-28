@@ -21,16 +21,15 @@ def main():
     interaction_dict, pairs_dict = find_interactions(proteins)
     
     global clust_features, plot_features, cud_palette
-    clust_features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+    clust_features = ['New Length', 'New pI', 'New Gravy', 'New Instability']
     plot_features = ['Length', 'pI', 'Gravy']
     cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
 
     fig = plot(proteins)
     fig = plot_network(fig, interaction_dict, pairs_dict, proteins, True)
     fig, cluster_centers = add_centers(proteins, fig)
-    fig, centroids = add_centroids(proteins, cluster_centers, fig)
+    fig = add_centroids(proteins, cluster_centers, fig)
     fig = add_dropdown(proteins, fig)
-    fig.show()
     plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
     write_clusters(proteins)
     write_df(proteins, '../outputs/proteins_clustered_taxanomy_db.csv')
@@ -96,19 +95,19 @@ def plot_network(fig, interaction_dict, pairs_dict, proteins, remove_null):
         line_ys = []
         line_zs = []
         for pair in pairs_dict[interaction]:
-            line_xs.append(proteins.loc[pair[0], 'Length']) 
-            line_xs.append(proteins.loc[pair[1], 'Length'])
+            line_xs.append(proteins.loc[pair[0], plot_features[0]]) 
+            line_xs.append(proteins.loc[pair[1], plot_features[0]])
             line_xs.append(None)
-            line_ys.append(proteins.loc[pair[0],'pI'])
-            line_ys.append(proteins.loc[pair[1],'pI'])
+            line_ys.append(proteins.loc[pair[0], plot_features[1]])
+            line_ys.append(proteins.loc[pair[1], plot_features[1]])
             line_ys.append(None)
-            line_zs.append(proteins.loc[pair[0], 'Gravy'])
-            line_zs.append(proteins.loc[pair[1], 'Gravy'])
+            line_zs.append(proteins.loc[pair[0], plot_features[2]])
+            line_zs.append(proteins.loc[pair[1], plot_features[2]])
             line_zs.append(None)
         if len(interaction) == 1:
             cluster = str(interaction[0])
             trace_name = 'Cluster '+cluster+' interactions'
-            color = cud_palette[int(cluster)+1]
+            color = cud_palette[int(cluster)]
             fig.add_scatter3d(x=line_xs, y=line_ys, z=line_zs, mode='lines', 
                   line=dict(color=color, width=0.2), name=trace_name)
         else:
@@ -118,7 +117,6 @@ def plot_network(fig, interaction_dict, pairs_dict, proteins, remove_null):
                 inter_zs.append(z)
     fig.add_scatter3d(x=inter_xs, y=inter_ys, z=inter_zs, mode='lines', 
                       line=dict(color='#aaaaaa', width=0.2), name='Inter-cluster interactions')
-    
     return fig
 
 def add_dropdown(proteins, fig):
@@ -131,9 +129,9 @@ def add_dropdown(proteins, fig):
     for phylum in proteins['Phylum'].unique():
         phyla_indexes = proteins[proteins['Phylum'] == phylum].index     
         trace = go.Scatter3d(
-            x=proteins.loc[phyla_indexes, 'Length'],
-            y=proteins.loc[phyla_indexes, 'pI'],
-            z=proteins.loc[phyla_indexes, 'Gravy'],
+            x=proteins.loc[phyla_indexes, plot_features[0]],
+            y=proteins.loc[phyla_indexes, plot_features[1]],
+            z=proteins.loc[phyla_indexes, plot_features[2]],
             hovertext=phyla_indexes,
             mode='markers', hoverinfo=('text+x+y+z'),
             marker=dict(size=3, color='#000000'),
@@ -151,14 +149,13 @@ def euclidean_distance(point1, point2):
     return np.sqrt(np.sum((point1 - point2)**2))
     
 def add_centroids(proteins, cluster_centers, fig):
-    columns_to_mean = ['New Length', 'New pI', 'New Gravy']
     centroids = {cluster: [] for cluster in cluster_centers}
     for cluster, center in cluster_centers.items():
-        center = center[columns_to_mean]
+        center = center[clust_features]
         min_distance = float('inf')
         closest_centroid = None
         for protein, row in proteins.iterrows():
-            point = row[columns_to_mean]
+            point = row[clust_features]
             distance = euclidean_distance(point, center)
             if distance < min_distance:
                 min_distance = distance
@@ -172,43 +169,43 @@ def add_centroids(proteins, cluster_centers, fig):
     clusters = []
     f = open('../outputs/centroids.fa', 'w')
     for cluster, protein in centroids.items():
-        closest_x_values.append(proteins.loc[protein, 'Length'])
-        closest_y_values.append(proteins.loc[protein, 'pI'])
-        closest_z_values.append(proteins.loc[protein, 'Gravy'])
+        closest_x_values.append(proteins.loc[protein, plot_features[0]])
+        closest_y_values.append(proteins.loc[protein, plot_features[1]])
+        closest_z_values.append(proteins.loc[protein, plot_features[2]])
         closest_proteins.append(protein)
         clusters.append(int(cluster))
         f.write(protein+'_centroid_of_cluster_'+str(cluster)+'\n'+proteins.loc[protein, 'Sequence']+'\n')
     f.close() 
     
     fig.add_scatter3d(x=closest_x_values, y=closest_y_values, z=closest_z_values, hovertext=closest_proteins, 
-                      hoverinfo=('text+x+y+z'), marker=dict(color=tab_20_pastel[1:], size=10, opacity=0.6), 
+                      hoverinfo=('text+x+y+z'), marker=dict(color=cud_palette[1:], size=10, opacity=0.6), 
                       mode='markers', name='Closest points')
-    return fig, centroids
+    return fig
 
 def add_centers(proteins, fig):
     cluster_points = {}
-    columns_to_mean = ['New Length', 'New Aromaticity', 'New pI', 'New Helix', 'New Turn', 'New Sheet', 'New Instability', 'New Flexibility', 'New Gravy']
     for cluster in proteins['Cluster'].unique():
         if cluster == '-1':
             continue
         if cluster not in cluster_points:
             cluster_points[cluster] = []
-        cluster_data = proteins[proteins['Cluster'] == cluster][columns_to_mean]
+        cluster_data = proteins[proteins['Cluster'] == cluster][clust_features]
         cluster_points[cluster].append(cluster_data)  
     cluster_centers = {}
     for cluster in cluster_points:
         if cluster not in cluster_centers:
             combined_data = pd.concat(cluster_points[cluster], axis=0)
             cluster_centers[cluster] = combined_data.mean()
-    x_values = unstandardize_data(proteins['Length'], [cluster_centers[cluster]['New Length'] for cluster in cluster_centers])
-    y_values = unstandardize_data(proteins['pI'], [cluster_centers[cluster]['New pI'] for cluster in cluster_centers])
-    z_values = unstandardize_data(proteins['Gravy'], [cluster_centers[cluster]['New Gravy'] for cluster in cluster_centers])
+    new_features = [f'New {feature}' for feature in plot_features]
+    x_values = unstandardize_data(proteins[plot_features[0]], [cluster_centers[cluster][new_features[0]] for cluster in cluster_centers])
+    y_values = unstandardize_data(proteins[plot_features[1]], [cluster_centers[cluster][new_features[1]] for cluster in cluster_centers])
+    z_values = unstandardize_data(proteins[plot_features[2]], [cluster_centers[cluster][new_features[2]] for cluster in cluster_centers])
     
     fig.add_scatter3d(x=x_values, y=y_values, z=z_values, mode='markers', name='Centroids', marker=dict(color='#444444', size=6))
     return fig, cluster_centers
 
 def plot(proteins):
-    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', color_discrete_sequence=cud_palette, 
+    fig = px.scatter_3d(proteins, x=plot_features[0], y=plot_features[1], z=plot_features[2], color='Cluster', color_discrete_sequence=cud_palette, 
                         hover_name=proteins.index, hover_data=['Species','Genus','Family','Order','Class','Phylum'])
     fig.update_traces(marker=dict(size=3, opacity=0.6))
     fig.update_layout(title={'text': 'Protein clustering'}, legend= {'itemsizing': 'constant'})
@@ -250,4 +247,3 @@ def write_df(dataframe, file_name):
 
 if __name__ == '__main__':
     main()
-
