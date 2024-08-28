@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.offline as pyo
+import statistics
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -30,13 +31,13 @@ def main():
     
     e, min_samples, bounds = get_bounds(imports, args.sil, args.n)
     final_bounds = test_bounds(imports, args.n, e, min_samples, bounds)
-    # if final_bounds not None:
-    #     proteins = apply_bounds(imports, final_bounds)
-    #     fig = plot(proteins)
-    #     plotly.offline.plot(fig, filename='../outputs/dbscan_optimized_plot.html', auto_open=True)
-    #     write_df(proteins, args.df)
-    # else:
-    #     print("Bounds were not found, try a different sample size")
+    if final_bounds is not None:
+        proteins = assign_final_labels(imports, final_bounds)
+        fig = plot(proteins)
+        pyo.offline.plot(fig, filename=f'../outputs/dbscan_optimized_plot.html', auto_open=True)
+        write_df(proteins, 'proteins_clustered_db.csv')
+    else:
+        print("Bounds were not found, try a different sample size")
 
 def optimize_parameters(X, sil_target):
     final_eps = 0
@@ -167,7 +168,7 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
     final_bounds = None
     passes = 0
     fails = 0
-    for i in range(20):
+    for i in range(3):
         print(f"Running test {i + 1}/20")
         sample_df = imports.sample(n=n_samples)
         X = sample_df[features].values
@@ -177,6 +178,10 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
         test_df = clean_df(test_df)
         plot_test = test_df.copy()
         test_df = test_df.reindex(sample_df.index)
+
+        test_df['Cluster'] = test_df['Cluster'].astype(str)
+        test_df['Cluster'] = pd.Categorical(test_df['Cluster'], categories=sample_df['Cluster'].cat.categories, ordered=True)
+
         same_cluster = (sample_df['Cluster'] == test_df['Cluster'])
         print(same_cluster.mean())
         if same_cluster.mean() > 0.95:
@@ -185,6 +190,10 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
             fails += 1
 
     print("Percent of passing tests: "+str((passes/(passes+fails))*100)+"%")
+    
+    if (passes/(passes+fails)) > 0.66:
+        final_bounds = bounds
+
     fig = plot(sample_df)
     pyo.plot(fig, filename=f'../outputs/sample_plot.html', auto_open=True)
     fig = plot(plot_test)
@@ -229,60 +238,46 @@ def update_counter(final_sil, final_eps, final_min, unique_clusters):
     sys.stdout.write(f"\rCurrent sil: {final_sil}, eps: {final_eps}, min: {final_min}, clusters: {unique_clusters}") 
     sys.stdout.flush()
 
-def write_df(dataframe, old_file):
-    dataframe.to_csv(old_file, index_label='Protein Name')
+def assign_final_labels(imports, final_bounds):
+    imports['Cluster'] = imports.apply(lambda row: classify_point(row, final_bounds), axis=1)
+    proteins = clean_df(imports)
+    write_bounds_to_file(final_bounds, proteins)
+    return proteins
+
+def write_bounds_to_file(final_bounds, proteins):
+    rows = []
+    for cluster, bounds in final_bounds.items():
+        row = {'Cluster': cluster}
+        for feature, feature_bounds in bounds.items():
+            original_feature_name = feature.replace('New ', '')
+            original_data = proteins[original_feature_name].tolist()
+            unstandardized_min = unstandardize_data(original_data, [feature_bounds['min']])[0]
+            unstandardized_max = unstandardize_data(original_data, [feature_bounds['max']])[0]
+            mean_value = proteins[proteins['Cluster'] == cluster][original_feature_name].mean()
+            median_value = proteins[proteins['Cluster'] == cluster][original_feature_name].median()
+            std_dev_value = proteins[proteins['Cluster'] == cluster][original_feature_name].std()
+            row[f'{original_feature_name}_min'] = unstandardized_min
+            row[f'{original_feature_name}_max'] = unstandardized_max
+            row[f'{original_feature_name}_mean'] = mean_value
+            row[f'{original_feature_name}_median'] = median_value
+            row[f'{original_feature_name}_std_dev'] = std_dev_value
+        rows.append(row)
+    bounds_df = pd.DataFrame(rows)
+    bounds_df.to_csv('../outputs/dbscan_bounds.csv', index=False)
+    return True
+
+def unstandardize_data(data_list, coords):
+    unstandard_list = []
+    list_stdev = statistics.stdev(data_list)
+    list_mean = statistics.mean(data_list)
+    for i in coords:
+        new_i = (i * list_stdev) + list_mean
+        unstandard_list.append(new_i)
+    return unstandard_list
+
+def write_df(dataframe, file_name):
+    dataframe.to_csv(file_name, index_label='Protein Name')
     return True
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-# def assign_final_labels(proteins, cluster_ranges, cluster_centers):
-#     final_labels = []
-
-#     for _, row in proteins.iterrows():
-#         point = row[['New Length', 'New pI', 'New Instability', 'New Gravy']].values
-#         assigned = False
-
-#         for trial_num, ranges in cluster_ranges.items():
-#             for cluster, cluster_range in ranges.items():
-#                 if (cluster_range['New Length']['min'] <= point[0] <= cluster_range['New Length']['max'] and
-#                     cluster_range['New pI']['min'] <= point[1] <= cluster_range['New pI']['max'] and
-#                     cluster_range['New Instability']['min'] <= point[2] <= cluster_range['New Instability']['max'] and
-#                     cluster_range['New Gravy']['min'] <= point[3] <= cluster_range['New Gravy']['max']):
-#                     final_labels.append(str(cluster))  # Convert cluster number to string
-#                     assigned = True
-#                     break
-#             if assigned:
-#                 break
-
-#         if not assigned:
-#             final_labels.append('-1')  # Unassigned points
-
-#     proteins['Final Cluster'] = final_labels
-
-#     # Count occurrences of each cluster
-#     cluster_counts = proteins['Final Cluster'].value_counts()
-#     cluster_mapping = {cluster: str(rank + 1) for rank, (cluster, _) in enumerate(cluster_counts.items())}
-
-#     # Map final cluster labels to most popular
-#     proteins['Final Cluster'] = proteins['Final Cluster'].map(cluster_mapping).fillna('-1').astype(str)
-
-#     # Plot final results using original feature values
-#     final_fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Final Cluster',
-#                              color_discrete_sequence=px.colors.qualitative.Plotly, title='Final DBSCAN Clustering')
-#     pyo.plot(final_fig, filename='../outputs/final_dbscan_labeled.html', auto_open=True)
-
-#     # Save final labels to CSV
-#     proteins.to_csv('../outputs/final_labeled_proteins.csv', index_label='Protein Name')
-#     return proteins

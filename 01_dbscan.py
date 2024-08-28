@@ -19,6 +19,11 @@ def main():
     args = parser.parse_args()
     imports = pd.read_csv(args.df)
     imports.set_index('Protein Name', inplace=True)
+
+    global features, cud_palette
+    features = ['New Length', 'New pI', 'New Instability', 'New Gravy']
+    cud_palette = ["#999999","#0072B2","#56B4E9","#E69F00","#F0E442","#009E73","#D55E00","#CC79A7","#000000"]
+
     proteins = cluster(float(args.sil), imports)
     fig = plot(proteins)
     plotly.offline.plot(fig, filename='../outputs/dbscan_optimized_plot.html', auto_open=True)
@@ -27,24 +32,6 @@ def main():
 def update_counter(final_sil, final_eps, final_min):
     sys.stdout.write("\rCurrent sil: {}, eps: {}, min: {} ".format(final_sil, final_eps, final_min))
     sys.stdout.flush()
-
-def color_palette():
-    global tab_20, tab_20_pastel
-    old_tab_20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 179, 71),  
-         (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),  
-         (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),  
-         (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),  
-         (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
-    tab_20_pastel = []
-    tab_20 = []
-    counter = 0
-    for color in old_tab_20:
-        if counter % 2 == 1:
-            tab_20_pastel.append('rgb'+str(color))
-        else:
-            tab_20.append('rgb'+str(color))
-        counter += 1
-    return True
 
 def optimize_parameters(X, sil_target):
     final_eps = 0
@@ -78,8 +65,7 @@ def cluster(sil_target, proteins):
     return proteins
 
 def plot(proteins):
-    color_palette()
-    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', color_discrete_sequence=tab_20_pastel, 
+    fig = px.scatter_3d(proteins, x='Length', y='pI', z='Gravy', color='Cluster', color_discrete_sequence=cud_palette, 
                         hover_name=proteins.index)
     fig.update_traces(marker=dict(size=3, opacity=0.6))
     fig.update_layout(title={'text': 'DBSCAN optimized for sil score'}, legend={'itemsizing': 'constant'}) 
