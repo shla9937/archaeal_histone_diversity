@@ -26,11 +26,21 @@ def main():
     valid_category_order = [strategy for strategy in category_order if strategy in valid_strategies]
     filtered_df['Strategy'] = pd.Categorical(
         filtered_df['Strategy'], categories=valid_category_order, ordered=True)
+
     columns_to_compare = ['Phylum', 'coding_density', 'gc_percentage', 'genome_size']
     for col in columns_to_compare:
         if col == 'Phylum':
-            plot_comparison(filtered_df, 'Strategy', col, None, save_path=f'../outputs/strategy_v_{col}.png', use_colors=False)
-            plot_comparison(filtered_df, 'Strategy', col, None, save_path=f'../outputs/{col}_v_strategy.png', use_colors=True)
+            phylum_counts = filtered_df['Phylum'].value_counts()
+            phyla_above_cutoff = phylum_counts[phylum_counts >= args.cutoff].index.tolist()
+            phyla_below_cutoff = phylum_counts[phylum_counts < args.cutoff].index.tolist()
+
+            filtered_above_cutoff = filtered_df[filtered_df['Phylum'].isin(phyla_above_cutoff)]
+            filtered_below_cutoff = filtered_df[filtered_df['Phylum'].isin(phyla_below_cutoff)]
+
+            # Plot comparison for Phyla above or equal to the cutoff
+            plot_comparison(filtered_above_cutoff, 'Strategy', col, None, save_path=f'../outputs/{col}_v_strategy_above_cutoff.png', use_colors=True)
+            # Plot comparison for Phyla below the cutoff
+            plot_comparison(filtered_below_cutoff, 'Strategy', col, None, save_path=f'../outputs/{col}_v_strategy_below_cutoff.png', use_colors=True)
         else:
             p_values_df = perform_pairwise_comparison(filtered_df, col)
             plot_comparison(filtered_df, 'Strategy', col, p_values_df, save_path=f'../outputs/strategy_v_{col}.png', use_colors=True)
@@ -47,13 +57,14 @@ def get_categories(proteins):
     category_order = singles + multiples + combinations + no_histones
     return category_order
 
-# Function to plot different charts
-def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=True):
-    plt.figure(figsize=(16, 8))  # Increase the figure size
+def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=True, subset=None):
+    if subset is not None:
+        df = df[df[x_col].isin(subset)]
+    
+    plt.figure(figsize=(16, 8))
 
     if use_colors:
         colors = []
-
         for cluster in df[x_col].cat.categories:
             if '+' not in cluster:
                 match = re.search(r'\d+', cluster)
@@ -79,7 +90,6 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
         sns.boxplot(data=df, x=x_col, y=y_col, palette=colors)
         plt.xticks(rotation=90)
 
-        # Add significant p-values to the plot
         if p_values_df is not None:
             for i, strategy in enumerate(df[x_col].cat.categories):
                 if strategy != 'No histones':
@@ -92,30 +102,22 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     plt.ylabel(y_col)
     plt.tight_layout()
     
-    # Adjust the legend to fit better in the plot area
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1), title=y_col, fontsize='small', title_fontsize='medium')  # Adjust legend size
-    plt.subplots_adjust(right=0.85)  # Adjust the right space to fit the legend
+    plt.subplots_adjust(right=0.85)
 
     if save_path:
-        save_path = save_path.replace(' ', '_')  # Remove spaces from file name
-        plt.savefig(save_path, bbox_inches='tight')  # Use bbox_inches to avoid cutoff  
+        save_path = save_path.replace(' ', '_')
+        plt.savefig(save_path, bbox_inches='tight')
     plt.show()
 
 def perform_pairwise_comparison(df, y_col):
-    # Extract unique strategies
     strategies = df['Strategy'].unique()
-
-    # Create an empty DataFrame to store the values
     comparison_df = pd.DataFrame()
 
     for strategy in strategies:
         strategy_data = df[df['Strategy'] == strategy][y_col].reset_index(drop=True)
         comparison_df[strategy] = strategy_data
-
-    # Fill NaNs with None for consistent output
     comparison_df = comparison_df.where(pd.notnull(comparison_df), None)
-
-    # Perform pairwise tests
     results = []
     for strategy in strategies:
         if strategy != 'No histones':
@@ -146,10 +148,7 @@ def perform_pairwise_comparison(df, y_col):
                     't-statistic': None,
                     'p-value': None
                 })
-
-    # Convert results to DataFrame
     results_df = pd.DataFrame(results)
-    
     return results_df
 
 if __name__ == "__main__":
