@@ -15,9 +15,6 @@ def main():
     dataframes = [pd.read_csv(csv_file) for csv_file in args.csvs]
     names = [i for i in args.names]
 
-    global cud_palette
-    cud_palette = ["#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000", "#999999"]
-
     if len(dataframes) < 2:
         raise ValueError('At least two CSV files are required to create a Venn diagram.')
     sets = [set(df['Protein Name']) for df in dataframes]
