@@ -36,7 +36,7 @@ def main():
     plt.legend(loc='best')
     plt.tight_layout()
     
-    plt.savefig("../outputs/e_value_comparison.png")
+    plt.savefig("e_value_comparison.png")
     plt.show()
 
 if __name__ == "__main__":
