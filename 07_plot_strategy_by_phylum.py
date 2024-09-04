@@ -56,7 +56,7 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     # Sort y values by the number of points in descending order
     y_order = df[y_col].value_counts().index
 
-    plt.figure(figsize=(16, 8))
+    plt.figure(figsize=(8, 8))
 
     colors = None
     if use_colors:

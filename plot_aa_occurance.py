@@ -120,6 +120,7 @@ def plot_single_histone_distribution(strategy_df, strategy, sequences_df):
         cluster_number = strategy.replace('Single', '').strip()
     elif 'Multiple' in strategy:
         cluster_number = strategy.replace('Multiple', '').strip()
+        cluster_number = -int(cluster_number)-1
     elif 'No histones' in strategy:
         cluster_number = 0
     plt.bar(x_values, y_values, color=cud_palette[int(cluster_number)])

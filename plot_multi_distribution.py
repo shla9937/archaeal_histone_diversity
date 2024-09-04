@@ -94,6 +94,7 @@ def plot_multiple_distribution(strategy_df, strategy, max_x_value):
     counts = Counter(cluster_counts)
 
     strategy_index = int(strategy.split(' ')[-1])  # Get the number after "Multiple"
+    strategy_index = -int(strategy_index)-1
     color = cud_palette[strategy_index] if strategy_index < len(cud_palette) else '#aaaaaa'
 
     plt.figure(figsize=(10, 6))
