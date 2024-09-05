@@ -7,13 +7,13 @@ import argparse
 import re
 
 def main():
-    global cud_palette
-    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"]
-
     parser = argparse.ArgumentParser(description='Plot vertical countplots for strategy comparison from a CSV file.')
     parser.add_argument('--df', type=str, required=True, help='Path to the input CSV file')
     parser.add_argument('--cutoff', type=int, required=True, help='Minimum number of genomes for a strategy to be included')
     args = parser.parse_args()
+
+    global cud_palette
+    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"]
 
     proteins = pd.read_csv(args.df)
     proteins_exploded = explode_list_column(proteins, 'Strategy')
