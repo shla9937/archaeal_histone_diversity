@@ -50,6 +50,8 @@ def add_tax(df):
     return df
 
 def determine_location(location):
+    if pd.isna(location):  # Handles nan values
+        return ["none"]
     location = location.lower()
     locations = []
     
