@@ -5,14 +5,13 @@ import matplotlib.pyplot as plt
 import argparse
 import re
 
-
 def main():
     parser = argparse.ArgumentParser(description='Plot strategy distribution from a CSV file.')
     parser.add_argument('--df', type=str, required=True, help='Path to the input CSV file')
     args = parser.parse_args()
     
     global cud_palette
-    cud_palette = ["#999999","#56B4E9","#D55E00","#E69F00","#F0E442","#009E73","#CC79A7","#0072B2","#000000"]   
+    cud_palette = ["#999999", "#56B4E9", "#D55E00", "#E69F00", "#F0E442", "#009E73", "#CC79A7", "#0072B2", "#000000"]   
     
     plot_strategy_distribution(args.df)
 
@@ -32,22 +31,39 @@ def plot_strategy_distribution(csv_file):
                 colors.append(cud_palette[-2])
             elif match:
                 index = int(match.group())
-                colors.append(cud_palette[index])
+                if index < len(cud_palette):  # Ensure index is within bounds of the palette
+                    colors.append(cud_palette[index])
+                else:
+                    colors.append('#aaaaaa')
             else:
                 colors.append('#aaaaaa')
         else:
             colors.append('#aaaaaa')
-    fig, ax = plt.subplots()
+    
+    # Set figure size to 180 mm width (7.087 inches) and maintain aspect ratio
+    fig, ax = plt.subplots(figsize=(180 / 25.4, (180 / 25.4) * 0.75))
+    
+    # Set global font size to 6pt
+    plt.rcParams.update({'font.size': 6})
+
     bars = ax.bar(clusters, values, color=colors)
+    
+    # Rotate the x-tick labels and align them correctly
     ax.set_xticks(range(len(clusters)))
     ax.set_xticklabels(clusters, rotation=90)
+    
+    # Annotate each bar with the corresponding value
     for bar, value in zip(bars, values):
-        plt.text(bar.get_x() + bar.get_width() / 2, 
+        ax.text(bar.get_x() + bar.get_width() / 2, 
                  bar.get_height(), 
                  f'{value}', 
-                 ha='center', va='bottom')
-    ax.set_title('Strategies used by each genome')
+                 ha='center', va='bottom', fontsize=6)
+    
+    # Set title and remove unnecessary spines
+    ax.set_title('Strategies used by each genome', fontsize=6)
     ax.spines[['right', 'top']].set_visible(False)
+    
+    # Adjust layout to ensure everything fits and save the figure
     plt.tight_layout()
     plt.savefig('../outputs/strategies.png', dpi=300)
     plt.show()
