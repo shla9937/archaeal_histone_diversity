@@ -3,6 +3,8 @@
 import argparse
 import pandas as pd
 import numpy as np
+from Bio import SeqIO
+from Bio.SeqUtils import ProtParam
 import statistics
 import plotly
 import plotly.express as px
@@ -29,10 +31,11 @@ def main():
     fig = plot_network(fig, interaction_dict, pairs_dict, proteins, True)
     fig, cluster_centers = add_centers(proteins, fig)
     fig = add_centroids(proteins, cluster_centers, fig)
+    fig = add_controls(fig)
     fig = add_dropdown(proteins, fig)
     plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
-    write_clusters(proteins)
-    write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
+    #write_clusters(proteins)
+    #write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
     
 def add_tax(proteins, tax_file):
     tax_dict = {}
@@ -123,8 +126,8 @@ def add_dropdown(proteins, fig):
     dropdown_list = []
     traces = list(fig.data)
     new_traces = proteins['Phylum'].unique().tolist()
-    dropdown_list.append(dict(args=[{"visible": [True] + [False]*len(traces+new_traces)}], 
-                         label="None", method="update"))
+    # dropdown_list.append(dict(args=[{"visible": [True] + [False]*len(traces+new_traces)}], 
+    #                      label="None", method="restyle"))
     idx = 0
     for phylum in proteins['Phylum'].unique():
         phyla_indexes = proteins[proteins['Phylum'] == phylum].index     
@@ -139,8 +142,12 @@ def add_dropdown(proteins, fig):
             visible=False)
         fig.add_traces(trace)
         dropdown_list.append(dict(args=[{"visible": [True]*len(traces) + idx*[False] + [True] + (len(traces+new_traces)-idx-1)*[False]}], 
-                                  label=phylum, method="update"))
+                                  label=phylum, method="restyle"))
         idx += 1
+    trace = go.Scatter3d(x=None,y=None,z=None,hovertext=None,mode='markers', hoverinfo=('text+x+y+z'),
+        marker=dict(size=3, color='#000000'),name=phylum,visible=False)
+    dropdown_list.append(dict(args=[{"visible": [True]*len(traces) + idx*[False] + [True] + (len(traces+new_traces)-idx-1)*[False]}], 
+                            label="None", method="restyle"))
     fig.update_layout(updatemenus=[dict(buttons=dropdown_list, x=0, y=0.95)])
     fig.update_layout(annotations=[dict(text="Phylum:", showarrow=False, x=-0.29, y=0.99)])
     return fig
@@ -176,10 +183,14 @@ def add_centroids(proteins, cluster_centers, fig):
         clusters.append(int(cluster))
         f.write(protein+'_centroid_of_cluster_'+str(cluster)+'\n'+proteins.loc[protein, 'Sequence']+'\n')
     f.close() 
-    
+
+    # fig.add_scatter3d(x=closest_x_values, y=closest_y_values, z=closest_z_values, hovertext=closest_proteins, 
+    #                   hoverinfo=('text+x+y+z'), marker=dict(color=cud_palette[1:], size=10, opacity=0.6), 
+    #                   mode='markers', name='Closets points')
+
     fig.add_scatter3d(x=closest_x_values, y=closest_y_values, z=closest_z_values, hovertext=closest_proteins, 
-                      hoverinfo=('text+x+y+z'), marker=dict(color=cud_palette[1:], size=10, opacity=0.6), 
-                      mode='markers', name='Closest points')
+                      hoverinfo=('text+x+y+z'), marker=dict(color='#000000', size=6, opacity=0.6), 
+                      mode='markers', name='Centroids')
     return fig
 
 def add_centers(proteins, fig):
@@ -201,7 +212,7 @@ def add_centers(proteins, fig):
     y_values = unstandardize_data(proteins[plot_features[1]], [cluster_centers[cluster][new_features[1]] for cluster in cluster_centers])
     z_values = unstandardize_data(proteins[plot_features[2]], [cluster_centers[cluster][new_features[2]] for cluster in cluster_centers])
     
-    fig.add_scatter3d(x=x_values, y=y_values, z=z_values, mode='markers', name='Centroids', marker=dict(color='#444444', size=6))
+    #fig.add_scatter3d(x=x_values, y=y_values, z=z_values, mode='markers', name='Centroids', marker=dict(color='#444444', size=6))
     return fig, cluster_centers
 
 def plot(proteins):
@@ -213,6 +224,40 @@ def plot(proteins):
     fig.update_scenes(camera_eye_y=-1.75)
     fig.update_scenes(camera_eye_z=0.15)
     fig.update_layout(width=1000, height=750)
+    return fig
+
+def add_controls(fig):
+    data = {'Sequence': ['MAELPIAPVDRLIRKAGAERVSEDAAKVLAEYLEEYAIELSKKAVDFARHAGRKTVKAEDIKLAIKA', 
+                         'MSGRGKQGGKARAKAKSRSSRAGLQFPVGRVHRLLRKGNYAERVGAGAPVYMAAVLEYLTAEILELAGNAARDNKKTRIIPRHLQLAIRNDEELNKLLGKVTIAQGGVLPNIQAVLLPKKTESHHKAKGK',
+                         'MPEPSKSAPAPKKGSKKAITKAQKKDGKKRKRSRKESYSIYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK',
+                         'MARTKQTARKSTGGKAPRKQLATKAARKSTPSTCGVKPHRYRPGTVALREIRRYQKSTELLIRKLPFQRLVREIAQDFNTDLRFQSAAVGALQEASEAYLVGLLEDTNLCAIHAKRVTIMPKDIQLARRIRGERA',
+                         'MSGRGKGGKGLGKGGAKRHRKVLRDNIQGITKPAIRRLARRGGVKRISGLIYEETRGVLKVFLENVIRDAVTYTEHAKRKTVTAMDVVYALKRQGRTLYGFGG', 
+                         'MAEVLVVTSKVKKLIKEKGQMNTSAETIDVLSKAIEQLCLKGVESAKADGRKTVMARDIVIDHL']}
+    protein_names = ['HTkA','H2A', 'H2B','H3', 'H4', 'Bd0055']
+    controls = pd.DataFrame(data, index=protein_names)
+    
+    for protein in controls.index:
+        sequence = controls.loc[protein, 'Sequence']
+        X = ProtParam.ProteinAnalysis(sequence)
+        controls.at[protein, 'Length'] = len(sequence)
+        controls.at[protein, 'Aromaticity'] = X.aromaticity()
+        controls.at[protein, 'pI'] = X.isoelectric_point()
+        controls.at[protein, 'Helix'] = X.secondary_structure_fraction()[0]
+        controls.at[protein, 'Turn'] = X.secondary_structure_fraction()[1]
+        controls.at[protein, 'Sheet'] = X.secondary_structure_fraction()[2]
+        controls.at[protein, 'Instability'] = X.instability_index()
+        controls.at[protein, 'Flexibility'] = sum(X.flexibility() / controls.loc[protein, 'Length'])
+        controls.at[protein, 'Gravy'] = X.gravy()
+
+    fig.add_scatter3d(x=controls[plot_features[0]],
+            y=controls[plot_features[1]],
+            z=controls[plot_features[2]],
+            mode='markers',
+            marker=dict(size=6, color='#CC79A7'),  # You can customize this
+            hovertext=controls.index,
+            hoverinfo='text',
+            name='Controls')
+
     return fig
 
 def write_clusters(proteins):
