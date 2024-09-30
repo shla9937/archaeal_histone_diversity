@@ -18,14 +18,15 @@ def main():
     if len(dataframes) < 2:
         raise ValueError('At least two CSV files are required to create a Venn diagram.')
     sets = [set(df['Protein Name']) for df in dataframes]
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(2.5, 2.5))
+    plt.rcParams.update({'font.size': 6})
     if len(sets) == 2:
         venn2(sets, set_labels=[f'{names[i]}' for i in range(len(sets))])
     elif len(sets) == 3:
         venn3(sets, set_labels=[f'{names[i]}' for i in range(len(sets))])
     else:
         raise ValueError('This script currently supports up to 3 CSV files for Venn diagrams.')
-    plt.title('Venn Diagram of Protein Accessions')
+    plt.savefig("venn.png", dpi=300)
     plt.show()
 
 if __name__ == "__main__":
