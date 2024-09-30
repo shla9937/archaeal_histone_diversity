@@ -218,7 +218,7 @@ def add_centers(proteins, fig):
 def plot(proteins):
     fig = px.scatter_3d(proteins, x=plot_features[0], y=plot_features[1], z=plot_features[2], color='Cluster', color_discrete_sequence=cud_palette, 
                         hover_name=proteins.index, hover_data=['Species','Genus','Family','Order','Class','Phylum'])
-    fig.update_traces(marker=dict(size=3, opacity=0.6))
+    fig.update_traces(marker=dict(size=3, opacity=0.5))
     fig.update_layout(title={'text': 'Protein clustering'}, legend= {'itemsizing': 'constant'})
     fig.update_scenes(camera_eye_x=-1.5)
     fig.update_scenes(camera_eye_y=-1.75)
