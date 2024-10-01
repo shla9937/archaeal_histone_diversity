@@ -19,7 +19,8 @@ def main():
 
     getcontext().prec = 100
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(2.5, 2))
+    plt.rcParams.update({'font.size': 6})
 
     for i, file in enumerate(args.files):
         data = pd.read_csv(file, sep="\t", header=None, dtype=str)
@@ -32,11 +33,11 @@ def main():
     plt.xlim(1e-40, 1e10)
     plt.xlabel("E-value")
     plt.ylabel("Hits")
-    plt.title("Hits at a give E-value")
+    # plt.title("Hits at a give E-value")
     plt.legend(loc='best')
     plt.tight_layout()
     
-    plt.savefig("e_value_comparison.png")
+    plt.savefig("e_value_comparison.png", dpi=300)
     plt.show()
 
 if __name__ == "__main__":
