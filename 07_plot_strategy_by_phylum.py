@@ -28,8 +28,10 @@ def main():
 
     col = 'Phylum'
     phylum_counts = filtered_df['Phylum'].value_counts()
-    phyla_above_cutoff = phylum_counts[phylum_counts >= args.cutoff].index.tolist()
-    phyla_below_cutoff = phylum_counts[phylum_counts < args.cutoff].index.tolist()
+    sorted_phyla = phylum_counts.sort_values(ascending=False)
+    midpoint = len(sorted_phyla) // 2
+    phyla_above_cutoff = sorted_phyla[:midpoint].index.tolist()
+    phyla_below_cutoff = sorted_phyla[midpoint:].index.tolist()
 
     filtered_above_cutoff = filtered_df[filtered_df['Phylum'].isin(phyla_above_cutoff)]
     filtered_below_cutoff = filtered_df[filtered_df['Phylum'].isin(phyla_below_cutoff)]
@@ -56,7 +58,8 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     # Sort y values by the number of points in descending order
     y_order = df[y_col].value_counts().index
 
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(3, 3))
+    plt.rcParams.update({'font.size': 6})
 
     colors = None
     if use_colors:
@@ -87,14 +90,21 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     # Ensure counts are displayed as integers
     plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{int(x)}'))
 
+    # Remove the top and right spines
+    ax = plt.gca()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.tick_params(labelsize=6)
+    plt.subplots_adjust(left=0.4) 
+
     plt.title(f'{x_col} vs {y_col}')
     plt.ylabel(y_col)
-    plt.xlabel('Count')
-    plt.tight_layout()
+    plt.xlabel('Genomes')
+    plt.legend(prop={'size': 5}) 
     
     if save_path:
         save_path = save_path.replace(' ', '_')
-        plt.savefig(save_path, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300)
     plt.show()
 
 if __name__ == "__main__":
