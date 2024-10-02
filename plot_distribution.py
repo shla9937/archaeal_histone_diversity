@@ -45,24 +45,28 @@ def plot_histone_distribution(csv_file):
     percentage_with_histones = (num_genomes_with_histones / total_genomes) * 100
     
     # Plotting
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 3))
+    fig.subplots_adjust(bottom=0.4)
     bars = ax.bar(all_values, all_counts, color='#aaaaaa')
     ax.set_xticks(all_values)
-    
+    ax.tick_params(labelsize=6)
+    plt.rcParams.update({'font.size': 6})
+    plt.ylim(0, 2500)
+
     for bar, count in zip(bars, all_counts):
         plt.text(bar.get_x() + bar.get_width() / 2, 
                  bar.get_height(), 
                  f'{count}', 
                  ha='center', va='bottom')
     
-    ax.set_xlabel('Number of Histones')
-    ax.set_ylabel('Number of Genomes')
-    ax.set_title(f'Number of Histones in Each Genome \n({num_genomes_with_histones}/{total_genomes} genomes = '
+    ax.set_xlabel('Histones', size=6)
+    ax.set_ylabel('Genomes', size=6)
+    ax.set_title(f'Number of histones in each genome \n({num_genomes_with_histones}/{total_genomes} genomes = '
                  f'{round(percentage_with_histones, 1)}%)')
     
     ax.spines[['right', 'top']].set_visible(False)
-    plt.tight_layout()
-    plt.savefig('../outputs/histones.png', dpi=300)
+    #plt.tight_layout()
+    plt.savefig('../outputs/distribution.png', dpi=300)
     plt.show()
 
 if __name__ == "__main__":

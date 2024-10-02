@@ -40,17 +40,16 @@ def plot_strategy_distribution(csv_file):
         else:
             colors.append('#aaaaaa')
     
-    # Set figure size to 180 mm width (7.087 inches) and maintain aspect ratio
-    fig, ax = plt.subplots(figsize=(180 / 25.4, (180 / 25.4) * 0.75))
-    
-    # Set global font size to 6pt
+    fig, ax = plt.subplots(figsize=(4, 3))
+    fig.subplots_adjust(bottom=0.4)
     plt.rcParams.update({'font.size': 6})
-
+    plt.ylim(0, 2500)
     bars = ax.bar(clusters, values, color=colors)
     
     # Rotate the x-tick labels and align them correctly
     ax.set_xticks(range(len(clusters)))
     ax.set_xticklabels(clusters, rotation=90)
+    ax.tick_params(labelsize=6)
     
     # Annotate each bar with the corresponding value
     for bar, value in zip(bars, values):
@@ -60,11 +59,13 @@ def plot_strategy_distribution(csv_file):
                  ha='center', va='bottom', fontsize=6)
     
     # Set title and remove unnecessary spines
-    ax.set_title('Strategies used by each genome', fontsize=6)
+    ax.set_title('Strategies used by each genome')
     ax.spines[['right', 'top']].set_visible(False)
+    ax.set_xlabel('Strategy', size=6)
+    ax.set_ylabel('Genomes', size=6)
     
     # Adjust layout to ensure everything fits and save the figure
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig('../outputs/strategies.png', dpi=300)
     plt.show()
 

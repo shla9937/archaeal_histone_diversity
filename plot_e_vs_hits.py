@@ -33,7 +33,9 @@ def main():
     plt.xlim(1e-40, 1e10)
     plt.xlabel("E-value")
     plt.ylabel("Hits")
-    # plt.title("Hits at a give E-value")
+    plt.title("Hits based on E-value")
+    ax = plt.gca()
+    ax.spines[['right', 'top']].set_visible(False)
     plt.legend(loc='best')
     plt.tight_layout()
     
