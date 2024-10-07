@@ -49,8 +49,14 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     if subset is not None:
         df = df[df[x_col].isin(subset)]
     
-    plt.figure(figsize=(10, 8))  # Adjusted the figure size for better fit
+    fig, ax = plt.subplots(figsize=(2.5, 2))
+    fig.subplots_adjust(bottom=0.4)
+    plt.rcParams.update({'font.size': 6})
+    ax.spines[['right', 'top']].set_visible(False)
+    ax.set_xlabel('Strategy', fontsize=6)
+    ax.set_ylabel('Genomes', fontsize=6)
 
+    # Set up colors for boxplot
     colors = None
     if use_colors:
         colors = []
@@ -67,25 +73,23 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
             else:
                 colors.append('#aaaaaa')
 
-    sns.boxplot(data=df, x=x_col, y=y_col, palette=colors, orient='v')
-    plt.xticks(rotation=90)  # Rotate x-axis labels for better readability
+    sns.boxplot(data=df, x=x_col, y=y_col, palette=colors, orient='v', linewidth=0.5, 
+                flierprops={'marker': 'o', 'markersize': 1, 'linestyle': 'none'})
+    plt.xticks(rotation=90, fontsize=6)
+    plt.yticks(fontsize=6)
 
-    # Set y-axis limits for percentage columns
     if y_col in ['gc_percentage', 'coding_density']:
         plt.ylim(0, 105)
     else:
-        plt.ylim(df[y_col].min() * 0.9, df[y_col].max() * 1.1)  # Default scaling
+        plt.ylim(df[y_col].min() * 0.9, df[y_col].max() * 1.1)
 
-    # Add significance stars at a fixed height
     if p_values_df is not None:
         strategies = df[x_col].cat.categories
         no_histones_index = strategies.get_loc('No histones')
-        y_max = plt.ylim()[1]  # Set to the maximum y limit
+        y_max = plt.ylim()[1]
         
-        # Choose a fixed height for stars
-        star_height = y_max - 0.05 * y_max  # 5% below the maximum y limit
+        star_height = y_max - 0.05 * y_max
 
-        # Adding stars
         for i, strategy in enumerate(strategies):
             if strategy != 'No histones':
                 p_value = p_values_df.loc[p_values_df['Strategy'] == strategy, 'p-value'].values[0]
@@ -97,19 +101,19 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
                     star = '*'
                 else:
                     star = ''
-                
-                plt.text(i, star_height, star, ha='center', color='red', fontsize=12)
 
-    plt.title(f'{x_col} vs {y_col} (Comparison to No Histones)')
-    plt.xlabel(x_col)
-    plt.ylabel(y_col)
+                plt.text(i, star_height, star, ha='center', color='red', fontsize=6)
+
+    plt.title(f'{x_col} vs {y_col}', fontsize=6)
+    plt.xlabel(x_col, fontsize=6)
+    plt.ylabel(y_col, fontsize=6)
     plt.tight_layout()
-    
+
     if save_path:
         save_path = save_path.replace(' ', '_')
-        plt.savefig(save_path, bbox_inches='tight')
-    plt.show()
+        plt.savefig(save_path, dpi=300)
 
+    plt.show()
 
 def perform_pairwise_comparison(df, y_col):
     strategies = df['Strategy'].unique()

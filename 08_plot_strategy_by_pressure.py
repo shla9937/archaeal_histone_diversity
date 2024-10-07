@@ -86,6 +86,7 @@ def plot_pressure_per_strategy(df, save_dir='../outputs/'):
         plt.ylim(0, 100)  # Set y-axis limits to 0-100%
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
+        
         plt.tight_layout()
         save_path = os.path.join(save_dir, f'pressure_percentage_{strategy}.png')
         plt.savefig(save_path)
@@ -134,7 +135,7 @@ def plot_combined_pressure_proportions(df, save_dir='../outputs/'):
     unique_strategies = pressure_proportions['Strategy'].unique()
     
     # Plot proportions for each strategy together (grouped side-by-side)
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(2.5, 2))
     ax = sns.barplot(data=pressure_proportions, x='Pressure', y='Proportion', hue='Strategy', 
                      hue_order=strategy_order,
                      palette=[get_color_for_strategy(strategy) for strategy in strategy_order])
