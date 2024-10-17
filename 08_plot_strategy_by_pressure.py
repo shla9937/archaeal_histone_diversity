@@ -96,7 +96,6 @@ def plot_pressure_per_strategy(df, save_dir='../outputs/'):
         save_path = os.path.join(save_dir, f'pressure_percentage_{strategy}.png')
         plt.savefig(save_path, dpi=300)
 
-# Function to plot combined pressure proportions for all strategies
 def plot_combined_pressure_proportions(df, save_dir='../outputs/'):
     os.makedirs(save_dir, exist_ok=True)
     
@@ -133,32 +132,34 @@ def plot_combined_pressure_proportions(df, save_dir='../outputs/'):
     
     # Sort the data based on this order
     pressure_proportions['Strategy'] = pd.Categorical(pressure_proportions['Strategy'], categories=strategy_order, ordered=True)
-    pressure_proportions = pressure_proportions.sort_values(['Pressure', 'Strategy'])
+    pressure_proportions = pressure_proportions.sort_values(['Strategy', 'Pressure'])
     
-    # Create a color palette based on the strategy
-    unique_strategies = pressure_proportions['Strategy'].unique()
+    # Create a color palette based on the pressure
+    unique_pressures = pressure_proportions['Pressure'].unique()
     
-    # Plot proportions for each strategy together (grouped side-by-side)
-    fig, ax = plt.subplots(figsize=(3, 2))    
+    # Plot proportions for each strategy as x and group the bars by pressure
+    fig, ax = plt.subplots(figsize=(5, 3))    
     plt.rcParams.update({'font.size': 6})
     fig.subplots_adjust(bottom=0.5)
-    ax = sns.barplot(data=pressure_proportions, x='Pressure', y='Proportion', hue='Strategy', 
-                     hue_order=strategy_order,
-                     palette=[get_color_for_strategy(strategy) for strategy in strategy_order])
+    
+    ax = sns.barplot(data=pressure_proportions, x='Strategy', y='Proportion', hue='Pressure', 
+                     hue_order=unique_pressures,
+                     palette='tab10')  # Adjust color palette as needed
+    
     ax.spines[['right', 'top']].set_visible(False)
-    ax.set_xlabel('Pressure', fontsize=6)
+    ax.set_xlabel('Strategy', fontsize=6)
     ax.set_ylabel('Percentage of genomes', fontsize=6)
 
-
-    plt.title('Pressure by strategy')
+    plt.title('Proportion of Pressures by Strategy')
     plt.xticks(rotation=90)
     plt.ylim(0, 100)  # Set y-axis limits to 0-100%
-    ax.legend_.remove()
+    ax.legend_.set_title('Pressure')
     plt.tight_layout()
     
-    save_path = os.path.join(save_dir, 'combined_pressure_percentages.png')
+    save_path = os.path.join(save_dir, 'combined_pressure_percentages_by_strategy.png')
     plt.savefig(save_path, dpi=300)
     plt.show()
+
 
 if __name__ == "__main__":
     main()
