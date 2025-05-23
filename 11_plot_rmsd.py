@@ -33,8 +33,8 @@ custom_names = {
 }
 
 custom_colors = {
-    "control_euk": "000000",
-    "control_arc": "#000000",
+    "control_euk": "#444444",
+    "control_arc": "#444444",
     "single_1": "#56B4E9",
     "single_2": "#D55E00",
     "single_3": "#E69F00",
