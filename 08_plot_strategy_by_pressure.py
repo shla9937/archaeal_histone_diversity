@@ -84,6 +84,7 @@ def plot_pressure_per_strategy(df, save_dir='../outputs/'):
         sns.barplot(data=strategy_data, x='Pressure', y='Proportion', palette=[color]*len(strategy_data), ax=ax)
         ax.spines[['right', 'top']].set_visible(False)
         ax.set_xlabel('Pressure', fontsize=6)
+        plt.rcParams.update({'font.size': 6})
         ax.set_ylabel('Percentage of genomes', fontsize=6)        
         plt.title(f'Pressures for {strategy}')
         plt.xticks(rotation=90)
@@ -138,7 +139,7 @@ def plot_combined_pressure_proportions(df, save_dir='../outputs/'):
     unique_pressures = pressure_proportions['Pressure'].unique()
     
     # Plot proportions for each strategy as x and group the bars by pressure
-    fig, ax = plt.subplots(figsize=(5, 3))    
+    fig, ax = plt.subplots(figsize=(2.5, 2))    
     plt.rcParams.update({'font.size': 6})
     fig.subplots_adjust(bottom=0.5)
     

@@ -63,7 +63,11 @@ def calculate_weighted_percentage_amino_acids(sequences):
     return {aa: freq / total_sequences for aa, freq in amino_acid_frequencies.items()}
 
 def plot_combination_histone_distribution(strategy_df, strategy, sequences_df):
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(2.5, 1.5))    
+    plt.rcParams.update({'font.size': 6})
+    fig.subplots_adjust(bottom=0.5)
+    ax.spines[['right', 'top']].set_visible(False)
+
     cluster_map = {}
     for clusters, histones in zip(strategy_df['Clusters'], strategy_df['Histones']):
         for cluster, histone_list in zip(clusters, histones):
@@ -81,10 +85,11 @@ def plot_combination_histone_distribution(strategy_df, strategy, sequences_df):
         positions = [x + i * bar_width for x in x_indices]
         plt.bar(positions, y_values, width=bar_width, color=cud_palette[int(cluster)], label=f'Cluster {cluster}')
 
-    plt.xlabel('Amino Acids')
-    plt.ylabel('Percentage (%)')
-    plt.title(f'Amino Acid Distribution for {strategy} Strategy')
-    plt.xticks([x + bar_width * (len(cluster_map) - 1) / 2 for x in x_indices], all_aa)
+    plt.xlabel('Amino Acids', fontsize=6)
+    plt.ylabel('Percentage (%)', fontsize=6)
+    plt.title(f'AA Distribution for {strategy}')
+    plt.xticks([x + bar_width * (len(cluster_map) - 1) / 2 for x in x_indices], all_aa, fontsize=6)
+    plt.yticks(fontsize=6)
     plt.ylim(0, 25)
     plt.legend(loc='best', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
     plt.tight_layout()
@@ -92,7 +97,10 @@ def plot_combination_histone_distribution(strategy_df, strategy, sequences_df):
     plt.show()
 
 def plot_single_histone_distribution(strategy_df, strategy, sequences_df):
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(2.5, 1.5))    
+    plt.rcParams.update({'font.size': 6})
+    fig.subplots_adjust(bottom=0.5)
+    ax.spines[['right', 'top']].set_visible(False)
 
     histone_aa_counts = Counter()
     histone_list = strategy_df['Histones'].explode().unique()
@@ -111,20 +119,24 @@ def plot_single_histone_distribution(strategy_df, strategy, sequences_df):
         cluster_number = 0
     plt.bar(x_values, y_values, color=cud_palette[int(cluster_number)])
 
-    plt.xlabel('Amino Acids')
-    plt.ylabel('Percentage (%)')
-    plt.title(f'Amino Acid Distribution for {strategy} Strategy')
-    plt.xticks(rotation=0)
+    plt.xlabel('Amino Acids', fontsize=6)
+    plt.ylabel('Percentage (%)', fontsize=6)
+    plt.title(f'AA Distribution for {strategy}')
+    plt.xticks(rotation=0, fontsize=6)
     plt.ylim(0, 25)
+    plt.yticks(fontsize=6)
     for x, y in zip(x_values, y_values):
         if y > 0:
-            plt.text(x, y, f'{y:.2f}%', ha='center', va='bottom')
+            plt.text(x, y, f'{y:.2f}%', ha='center', va='bottom', rotation=90)
     plt.tight_layout()
     plt.savefig(f'../outputs/{strategy}_single_amino_acid_distribution.png', dpi=300)
     plt.show()
 
 def plot_combined_amino_acid_distribution(strategies_df, sequences_df):
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(2.5, 1.5))    
+    plt.rcParams.update({'font.size': 6})
+    fig.subplots_adjust(bottom=0.5)
+    ax.spines[['right', 'top']].set_visible(False)
 
     all_sequences = []
     for _, row in strategies_df.iterrows():
@@ -137,14 +149,15 @@ def plot_combined_amino_acid_distribution(strategies_df, sequences_df):
     y_values = [combined_aa_percentages.get(aa, 0) for aa in x_values]
 
     plt.bar(x_values, y_values, color='#aaaaaa')  # Use a distinct color for the combined plot
-    plt.xlabel('Amino Acids')
-    plt.ylabel('Percentage (%)')
-    plt.title('Combined Amino Acid Distribution Across All Strategies')
-    plt.xticks(rotation=0)
+    plt.xlabel('Amino Acids', fontsize=6)
+    plt.ylabel('Percentage (%)', fontsize=6)
+    plt.title('AA Distribution Across All Strategies')
+    plt.xticks(rotation=0, fontsize=6)
     plt.ylim(0, 25)
+    plt.yticks(fontsize=6)
     for x, y in zip(x_values, y_values):
         if y > 0:
-            plt.text(x, y, f'{y:.2f}%', ha='center', va='bottom')
+            plt.text(x, y, f'{y:.2f}%', ha='center', va='bottom', rotation=90)
 
     plt.tight_layout()
     plt.savefig('../outputs/combined_amino_acid_distribution.png', dpi=300)
