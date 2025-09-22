@@ -9,6 +9,7 @@ import statistics
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+import kaleido
 
 def main():
     parser = argparse.ArgumentParser(description='Process protein data and plot interactions.')
@@ -33,7 +34,13 @@ def main():
     fig = add_centroids(proteins, cluster_centers, fig)
     fig = add_controls(fig)
     fig = add_dropdown(proteins, fig)
-    plotly.offline.plot(fig, filename='../outputs/final_clustering_plot.html', auto_open=True)
+    plotly.offline.plot(fig, filename='../outputs/final_clustering_plot_with_controls.html', auto_open=True)
+    
+    for trace in fig.data:
+        if getattr(trace, 'name', None) == '-1' or getattr(trace, 'name', None) == 'Cluster -1':
+            trace.visible = False
+
+    fig.write_image('../outputs/final_clustering_plot_with_controls.png', width=1000, height=750, scale=3)
     #write_clusters(proteins)
     #write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
     
@@ -232,8 +239,10 @@ def add_controls(fig):
                          'MPEPSKSAPAPKKGSKKAITKAQKKDGKKRKRSRKESYSIYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK',
                          'MARTKQTARKSTGGKAPRKQLATKAARKSTPSTCGVKPHRYRPGTVALREIRRYQKSTELLIRKLPFQRLVREIAQDFNTDLRFQSAAVGALQEASEAYLVGLLEDTNLCAIHAKRVTIMPKDIQLARRIRGERA',
                          'MSGRGKGGKGLGKGGAKRHRKVLRDNIQGITKPAIRRLARRGGVKRISGLIYEETRGVLKVFLENVIRDAVTYTEHAKRKTVTAMDVVYALKRQGRTLYGFGG', 
-                         'MAEVLVVTSKVKKLIKEKGQMNTSAETIDVLSKAIEQLCLKGVESAKADGRKTVMARDIVIDHL']}
-    protein_names = ['HTkA','H2A', 'H2B','H3', 'H4', 'Bd0055']
+                         'MAEVLVVTSKVKKLIKEKGQMNTSAETIDVLSKAIEQLCLKGVESAKADGRKTVMARDIVIDHL',
+                         'MSVELPFAPVDSLIRGHAGDLRVSAGAAEELARRIQRHGAILAVDAAAAAREDGRKTLMASDFEGIVGPRDDTAPDRRGDLALPVAPVDRIARLEIDDRFRVSEDARVALAGVLEAYAADIADGAAVLAEHAGRRTVQAEDIQTYVTLVE', 'MAVELPKAAIERIFRQGIGERRLSQDAKDTIYDFVPTMAEYVANAAKSVLDASGKKTLMEEHLKALADVLMVEGVEDYDGELFGRATVRRILKRAGIERASSDAVDLYNKLICRATEELGEKAAEYADEDGRKTVQGEDVEKAITYSMPKGGEL',
+                         'MAGNFANARVEKLIRQAGAQRVSADAVDKMNEILTDWGKNIAKYAVEIARHSGRKTVKENDIKLAAQK']}
+    protein_names = ['HTkA','H2A', 'H2B','H3', 'H4', 'Bd0055', 'Hpya', 'Hmk', 'HHoB']
     controls = pd.DataFrame(data, index=protein_names)
     
     for protein in controls.index:
