@@ -159,7 +159,7 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
     passes = 0
     fails = 0
     for i in range(3):
-        print(f"Running test {i + 1}/20")
+        print(f"Running test {i + 1}/3")
         sample_df = imports.sample(n=n_samples)
         X = sample_df[clust_features].values
         sample_df = get_clusters(sample_df, X, e, min_samples)
