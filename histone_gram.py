@@ -569,7 +569,6 @@ def plot_histone_gram(conserv_hist_inputs, compiled_sequences, plot_title, conse
     #else:
     plt.xticks(range(len(consensus)), consensus, size=tick_size)
     plt.tick_params(axis='x', pad=.5*tick_size, top=False, bottom=False)
-    plt.plot()  
     
     axs_2 = plt.twiny()
     axs_2.spines['right'].set_visible(False)
@@ -583,9 +582,8 @@ def plot_histone_gram(conserv_hist_inputs, compiled_sequences, plot_title, conse
     axs.margins(y=0, x=0)
     axs_2.margins(y=0, x=0)
     plt.tight_layout()
-    plt.savefig(outfile, format='pdf')
-    plt.plot()    
-
+    plt.savefig(outfile, format='svg')
+    
     #plt.figure(2)
     #plt.axvline(x=np.mean(l_curves)-np.std(l_curves), ls = "--", color='#aaaaaa', alpha=0.7)
     #plt.axvline(x=np.mean(l_curves)+np.std(l_curves), ls = "--", color='#aaaaaa', alpha=0.7)
@@ -596,6 +594,7 @@ def plot_histone_gram(conserv_hist_inputs, compiled_sequences, plot_title, conse
     #    np.exp(-0.5 * (1 / sigma * (bins - mu))**2))
     #plt.plot(bins, y, '--')
     plt.show()
+    plt.close() 
 
 
 if __name__ == '__main__':

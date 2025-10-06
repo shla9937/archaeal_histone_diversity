@@ -13,7 +13,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def main():
-    parser = argparse.ArgumentParser(description='Import proteins df, cluster using DBSCAN, output df with clusters.')
+    parser = argparse.ArgumentParser(description='Import proteins df, cluster using DBSCAN, test that clustering, apply bounds to whole dataset, output df with clusters.')
     parser.add_argument('--df', required=True, type=str,
                         help='Pandas df in csv format that doesn\'t already contain cluster annotation.')
     parser.add_argument('--sil', required=True, type=float,
@@ -81,7 +81,7 @@ def get_bounds(imports, sil_target, n_samples):
     for run in range(3):
         sample_df = imports.sample(n=n_samples)
         X = sample_df[clust_features].values
-        
+
         if initial:
             e, min_samples = optimize_parameters(X, sil_target)
             initial = False
@@ -152,7 +152,7 @@ def get_bounds(imports, sil_target, n_samples):
                     'min': None,
                     'max': None}
     
-    return e, min_samples, final_bounds
+    return e, min_samples, final_bounds # should this also output the sample_df?
         
 def test_bounds(imports, n_samples, e, min_samples, bounds):
     final_bounds = None
@@ -164,13 +164,14 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
         X = sample_df[clust_features].values
         sample_df = get_clusters(sample_df, X, e, min_samples)
         test_df = sample_df.copy()
-        test_df['Cluster'] = sample_df.apply(lambda row: classify_point(row, bounds), axis=1)
+        test_df['Cluster'] = test_df.apply(lambda row: classify_point(row, bounds), axis=1)
         test_df = clean_df(test_df)
         plot_test = test_df.copy()
         test_df = test_df.reindex(sample_df.index)
 
         test_df['Cluster'] = test_df['Cluster'].astype(str)
         test_df['Cluster'] = pd.Categorical(test_df['Cluster'], categories=sample_df['Cluster'].cat.categories, ordered=True)
+
 
         same_cluster = (sample_df['Cluster'] == test_df['Cluster'])
         print(same_cluster.mean())
