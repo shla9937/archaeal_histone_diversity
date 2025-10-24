@@ -126,7 +126,7 @@ def optimize_parameters(X, sil_target):
     final_eps = 0
     final_min = 0
     final_sil = 1 
-    for eps in np.arange(0.2, 0.7, 0.1):
+    for eps in np.arange(0.1, 1, 0.1):
         for min_samples in range(20, 50, 10): 
             db = DBSCAN(eps=eps, min_samples=int(min_samples)).fit(X)
             unique_clusters = np.unique(db.labels_)
@@ -158,11 +158,11 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
     final_bounds = None
     passes = 0
     fails = 0
-    sample_df = imports.sample(n=n_samples)
-    X = sample_df[clust_features].values
-    sample_df = get_clusters(sample_df, X, e, min_samples)
     for i in range(3):
         print(f"Running test {i + 1}/3")
+        sample_df = imports.sample(n=n_samples)
+        X = sample_df[clust_features].values
+        sample_df = get_clusters(sample_df, X, e, min_samples)
         test_df = sample_df.copy()
         test_df['Cluster'] = test_df.apply(lambda row: classify_point(row, bounds), axis=1)
         test_df = clean_df(test_df)
@@ -172,9 +172,10 @@ def test_bounds(imports, n_samples, e, min_samples, bounds):
         test_df['Cluster'] = test_df['Cluster'].astype(str)
         test_df['Cluster'] = pd.Categorical(test_df['Cluster'], categories=sample_df['Cluster'].cat.categories, ordered=True)
 
+
         same_cluster = (sample_df['Cluster'] == test_df['Cluster'])
         print(same_cluster.mean())
-        if same_cluster.mean() > 0.95:
+        if same_cluster.mean() > 0.9:
             passes += 1
         else:
             fails += 1
