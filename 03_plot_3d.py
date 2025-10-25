@@ -41,8 +41,8 @@ def main():
             trace.visible = False
 
     fig.write_image('../outputs/final_clustering_plot_with_controls.png', width=1000, height=750, scale=3)
-    #write_clusters(proteins)
-    #write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
+    write_clusters(proteins)
+    write_df(proteins, '../outputs/proteins_clustered_taxonomy_db.csv')
     
 def add_tax(proteins, tax_file):
     tax_dict = {}
