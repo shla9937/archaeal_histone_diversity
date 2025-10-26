@@ -100,7 +100,7 @@ def plot_comparison(df, x_col, y_col, p_values_df, save_path=None, use_colors=Tr
     plt.title(f'{x_col} vs {y_col}')
     plt.ylabel(y_col)
     plt.xlabel('Genomes')
-    plt.legend(prop={'size': 5}) 
+    plt.legend(prop={'size': 5}, loc='lower right') 
     
     if save_path:
         save_path = save_path.replace(' ', '_')
