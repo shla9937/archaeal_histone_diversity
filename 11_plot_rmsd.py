@@ -59,6 +59,13 @@ bar_labels = [custom_names.get(i, i) for i in means.index]
 
 bars = ax.bar(x, means, yerr=sems, capsize=5, color=bar_colors)
 
+# Overlay actual data points as scatter
+for i, idx in enumerate(means.index):
+    y = df.loc[idx].dropna().values
+    # Add a little random jitter to x for visibility if multiple points
+    x_jitter = np.random.normal(loc=0, scale=0.05, size=len(y)) if len(y) > 1 else 0
+    ax.scatter(np.full_like(y, x[i]) + x_jitter, y, color='black', s=8, zorder=10, alpha=0.7)
+
 ax.set_xticks(x)
 ax.set_xticklabels(bar_labels, rotation=90, ha='right')
 ax.set_ylabel("RMSD (Å)", fontsize=6)
