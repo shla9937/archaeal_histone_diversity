@@ -1,5 +1,5 @@
 # Histone diversity in the archaeal domain of life
-## by Shawn Lauarsen and Karolin Luger
+## by Shawn Laursen and Karolin Luger
 
 This code was used to produce the manuscript "Histone diversity in the archaeal domain of life" published in Nature Comminucations 2026. 
 
@@ -10,7 +10,7 @@ Install the conda environment with:
 
 ```
 conda env create -f environment.yml
-conda activate myenv
+conda activate histone-clustering
 ```
 
 ### Usage 
