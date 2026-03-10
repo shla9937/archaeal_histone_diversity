@@ -250,4 +250,3 @@ dependencies:
       - logistro==1.1.0
       - orjson==3.11.2
       - simplejson==3.20.1
-prefix: /Users/shawn/anaconda3/envs/histone-clustering
